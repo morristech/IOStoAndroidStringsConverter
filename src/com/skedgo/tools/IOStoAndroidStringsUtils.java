@@ -2,13 +2,17 @@ package com.skedgo.tools;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class IOStoAndroidStringsUtils {
 
+	public static final String iOSStringFileName = "/Localizable.strings";
+	public static final String androidFileName = "/converted_strings.xml";
 	private static IOStoAndroidStringsUtils instance;
 	
 	private IOStoAndroidStringsUtils(){}
@@ -18,6 +22,39 @@ public class IOStoAndroidStringsUtils {
 			instance = new IOStoAndroidStringsUtils();
 		}
 		return instance;
+	}
+	
+	
+	public void transformAllStrings(String iOSStringPath,String destAndroidStringPath){
+		
+		
+		System.out.println("EXIST "  + Files.exists(Paths.get(iOSStringPath)));
+		
+		try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(Paths.get(iOSStringPath))) {
+            for (Path path : directoryStream) {
+            	
+            	String dir = path.toString();
+            	String lang =  dir.substring(dir.lastIndexOf("\\") + 1, dir.length());
+            	
+            	System.out.println("LANG DIR "  +iOSStringPath + "/" + lang + iOSStringFileName);
+            	
+            	if(!Files.exists(Paths.get(iOSStringPath + "/" + lang + iOSStringFileName))){
+            		// not a language dir
+            		continue;
+            	}
+            	
+            	System.out.println("LANG "  +lang);
+            	
+            	String androidLangDir = lang.replace("-", "-r")
+            								.replace("Hans", "CN")
+            								.replace("Hant", "TW");
+
+            	transformIOStoAndroidStrings(iOSStringPath + "/" + lang + iOSStringFileName,
+            			destAndroidStringPath + "/values-" + androidLangDir );
+            	
+            }
+        } catch (IOException ex) {}
+		
 	}
 	
 	public void transformIOStoAndroidStrings(String iOSStringPath,String androidStringPath){
@@ -63,12 +100,18 @@ public class IOStoAndroidStringsUtils {
 			
 			buf.append("\n</resources>");
 			
-			writeFile(androidStringPath,buf.toString());
+			if(!Files.exists(Paths.get(androidStringPath))){
+				Files.createDirectory(Paths.get(androidStringPath));
+			}			
+			
+			writeFile(androidStringPath + androidFileName,buf.toString());
+			
+			System.out.println("Done!!" );
 			
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			System.out.println("ERROR "+  e + " ## " + e.getMessage());
 		}
+		
 		
 		
 	}

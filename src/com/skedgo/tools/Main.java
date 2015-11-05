@@ -4,10 +4,12 @@ public class Main {
 
 	public static void main(String[] args) {
 		
-		String iOSStringPath = args[0] + "/Localizable.strings";	
-		String androidStringPath = args[0] + "/converted_strings.xml";	
+		String iOSStringPath = args[0];	
+		String androidStringPath = args[1] ;	
 		
-		IOStoAndroidStringsUtils.getInstance().transformIOStoAndroidStrings(iOSStringPath, androidStringPath);
+		System.out.println("GENERATE STRINGS " + iOSStringPath + " " + androidStringPath);
+		
+		IOStoAndroidStringsUtils.getInstance().transformAllStrings(iOSStringPath, androidStringPath);
 		
 	}
 	
