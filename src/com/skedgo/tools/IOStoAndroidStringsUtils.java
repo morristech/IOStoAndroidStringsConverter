@@ -11,8 +11,6 @@ import java.util.regex.Pattern;
 
 public class IOStoAndroidStringsUtils {
 
-	public static final String iOSStringFileName = "/Localizable.strings";
-	public static final String androidFileName = "/converted_strings.xml";
 	private static IOStoAndroidStringsUtils instance;
 	
 	private IOStoAndroidStringsUtils(){}
@@ -25,7 +23,8 @@ public class IOStoAndroidStringsUtils {
 	}
 	
 	
-	public void transformAllStrings(String iOSStringPath,String destAndroidStringPath){
+	public void transformAllStrings(String iOSStringPath,String iOSStringFileName,
+			String destAndroidStringPath, String androidFileName){
 		
 		
 		System.out.println("EXIST "  + Files.exists(Paths.get(iOSStringPath)));
@@ -34,11 +33,12 @@ public class IOStoAndroidStringsUtils {
             for (Path path : directoryStream) {
             	
             	String dir = path.toString();
-            	String lang =  dir.substring(dir.lastIndexOf("\\") + 1, dir.length());
+            	String lang =  dir.substring(dir.lastIndexOf("\\") + 1, dir.length());            	
             	
-            	System.out.println("LANG DIR "  +iOSStringPath + "/" + lang + iOSStringFileName);
             	
-            	if(!Files.exists(Paths.get(iOSStringPath + "/" + lang + iOSStringFileName))){
+            	System.out.println("LANG DIR "  +iOSStringPath + "/" + lang  + "/" +  iOSStringFileName);
+            	
+            	if(!Files.exists(Paths.get(iOSStringPath + "/" + lang  + "/" +  iOSStringFileName))){
             		// not a language dir
             		continue;
             	}
@@ -47,17 +47,26 @@ public class IOStoAndroidStringsUtils {
             	
             	String androidLangDir = lang.replace("-", "-r")
             								.replace("Hans", "CN")
-            								.replace("Hant", "TW");
-
-            	transformIOStoAndroidStrings(iOSStringPath + "/" + lang + iOSStringFileName,
-            			destAndroidStringPath + "/values-" + androidLangDir );
+            								.replace("Hant", "TW")
+            								.replace("Base", "")
+            								.replace(".lproj", ""); // iOS like dir
+            	
+            	if(androidLangDir.equals("")){ // default res
+            		androidLangDir = "values";
+            	}else{
+            		androidLangDir = "values-" + androidLangDir;
+            	}
+        
+            	transformIOStoAndroidStrings(iOSStringPath + "/" + lang  + "/" +  iOSStringFileName,
+            			destAndroidStringPath + "/" + androidLangDir , androidFileName);
             	
             }
         } catch (IOException ex) {}
 		
 	}
 	
-	public void transformIOStoAndroidStrings(String iOSStringPath,String androidStringPath){
+	public void transformIOStoAndroidStrings(String iOSStringPath,String androidStringPath,
+			String androidFileName){
 		
 		try {
 			String content = readFile(iOSStringPath);
@@ -67,11 +76,17 @@ public class IOStoAndroidStringsUtils {
 			String patternComments = "/\\*(.*?)\\*/" ;
 			String patternFullStringDef = "(name=\""+ patternWords + "\")";
 			
-			// Basic clean
+			
+			// Basic clean	
+			
 			content = content.replaceAll("&", "&amp;")
-							 .replaceAll("%@", "PERCAT")
-							 .replaceAll("%ld", "PERCLD")
-							 .replace("'", "\\'");
+					 .replaceAll("%1", "PERC1")
+					 .replaceAll("%2", "PERC2")
+					 .replaceAll("\\$@", "DOLLARAT")
+					 .replaceAll("%@", "PERCAT")					 
+					 .replaceAll("%ld", "PERCLD")							 
+					 .replace("'", "\\'");
+
 			
 			// Strings			
 			String convertedAndroid = content.replaceAll(patternIOS, "\t<string name=\"$1\">$2</string>"); 
@@ -82,18 +97,31 @@ public class IOStoAndroidStringsUtils {
 			Pattern patternStringNames = Pattern.compile(patternFullStringDef);
 			Matcher matcher = patternStringNames.matcher(convertedAndroid_noComments);
 			
+			
 			// Names clean up
 			StringBuffer buf = new StringBuffer("<?xml version='1.0' encoding='UTF-8'?>\n<resources>\n");
 			while(matcher.find()){
-				matcher.appendReplacement(buf,  matcher.group(1)
-													.replace(" ", "_")
-													.replace(".", "DOT")
-													.replace("!", "EXCLAM")
-													.replace("?", "QUESTION")
-													.replace("\'", "APOST")
-													.replace(",", "COMA")
-													.replace("&amp;", "AMPERSAND")
-													.replace("-", "SLASH"));
+				String stringName = matcher.group(1)
+						.replace(" ", "_")
+						.replace(".", "DOT")
+						.replace("!", "EXCLAM")
+						.replace("?", "QUESTION")
+						.replace("\'", "APOST")
+						.replace("/", "SLASH")
+						.replace(",", "COMA")
+						.replace("(", "START_PARENT")
+						.replace(")", "END_PARENT")
+						.replace("&amp;", "AMPERSAND")
+						.replace("-", "MINUS");
+				
+				System.out.println(stringName);
+				
+				if(Character.isDigit(stringName.charAt("name=\"".length()))){ // because of the matching,
+  																		      // all strings start with name="
+					stringName = stringName.replace("name=\"", "name=\"_");
+				}
+				
+				matcher.appendReplacement(buf, stringName);
 
 			}
 			matcher.appendTail(buf);
@@ -104,7 +132,7 @@ public class IOStoAndroidStringsUtils {
 				Files.createDirectory(Paths.get(androidStringPath));
 			}			
 			
-			writeFile(androidStringPath + androidFileName,buf.toString());
+			writeFile(androidStringPath + "/" +  androidFileName,buf.toString());
 			
 			System.out.println("Done!!" );
 			
@@ -112,8 +140,7 @@ public class IOStoAndroidStringsUtils {
 			System.out.println("ERROR "+  e + " ## " + e.getMessage());
 		}
 		
-		
-		
+				
 	}
 	
 	private String readFile(String path) throws IOException {
