@@ -119,8 +119,12 @@ public class IOStoAndroidStringsUtils {
 			// Names clean up
 			StringBuffer buf = new StringBuffer("<?xml version='1.0' encoding='UTF-8'?>\n<resources>\n");
 			while(matcher.find()){
-				String stringName = matcher.group(1)
-						.replace(" ", "_")
+				String stringFullName = matcher.group(1);
+				
+				// get only the name for cleaning 
+				String stringName = stringFullName.substring(("name=\"".length()), stringFullName.length());
+				
+				stringName = stringName.replace(" ", "_")
 						.replace(".", "DOT")
 						.replace("!", "EXCLAM")
 						.replace("?", "QUESTION")
@@ -129,10 +133,21 @@ public class IOStoAndroidStringsUtils {
 						.replace(",", "COMA")
 						.replace("(", "START_PARENT")
 						.replace(")", "END_PARENT")
+						.replace("{", "START_QBRAQUET")
+						.replace("}", "END_QBRAQUET")
 						.replace("&amp;", "AMPERSAND")
-						.replace("-", "MINUS");
+						.replace("-", "MINUS")
+						.replace("<", "LESST")
+						.replace(">", "MORET")
+						.replace("@", "AT")
+						.replace("=", "EQUAL")
+						.replace("%", "PERC")
+						.replace("₂", "_2");
 				
 				System.out.println(stringName);
+				
+				// recontstruce name
+				stringName = "name=\"" + stringName;
 				
 				if(Character.isDigit(stringName.charAt("name=\"".length()))){ // because of the matching,
   																		      // all strings start with name="
