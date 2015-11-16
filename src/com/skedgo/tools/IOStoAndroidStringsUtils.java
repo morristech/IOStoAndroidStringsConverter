@@ -6,12 +6,18 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Dictionary;
+import java.util.Hashtable;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class IOStoAndroidStringsUtils {
 
 	private static IOStoAndroidStringsUtils instance;
+	
+	private Dictionary<String, List<String>> namesDic;
 	
 	private IOStoAndroidStringsUtils(){}
 	
@@ -22,12 +28,20 @@ public class IOStoAndroidStringsUtils {
 		return instance;
 	}
 	
+	public void transformAllStrings(String androidStringPath, List<List<String>> iosStringsInfo) {
+
+		namesDic = new Hashtable<>();		
+		for (int i = 0; i < iosStringsInfo.size(); i++) {
+			transformAllStrings("gereratedStrings" + i + ".xml" ,androidStringPath,
+					iosStringsInfo.get(i).get(0),iosStringsInfo.get(i).get(1));
+		}
+		
+		
+	}
 	
-	public void transformAllStrings(String iOSStringPath,String iOSStringFileName,
-			String destAndroidStringPath, String androidFileName){
-		
-		
-		System.out.println("EXIST "  + Files.exists(Paths.get(iOSStringPath)));
+	
+	public void transformAllStrings(String androidFileName, String destAndroidStringPath, String iOSStringPath,
+			String iOSStringFileName){		
 		
 		try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(Paths.get(iOSStringPath))) {
             for (Path path : directoryStream) {
@@ -56,9 +70,13 @@ public class IOStoAndroidStringsUtils {
             	}else{
             		androidLangDir = "values-" + androidLangDir;
             	}
+            	
+            	if(namesDic.get(androidLangDir)==null){
+            		namesDic.put(androidLangDir, new ArrayList<String>());
+            	}
         
             	transformIOStoAndroidStrings(iOSStringPath + "/" + lang  + "/" +  iOSStringFileName,
-            			destAndroidStringPath + "/" + androidLangDir , androidFileName);
+            			destAndroidStringPath + "/" + androidLangDir , androidFileName, androidLangDir);
             	
             }
         } catch (IOException ex) {}
@@ -66,7 +84,7 @@ public class IOStoAndroidStringsUtils {
 	}
 	
 	public void transformIOStoAndroidStrings(String iOSStringPath,String androidStringPath,
-			String androidFileName){
+			String androidFileName, String mapKey){
 		
 		try {
 			String content = readFile(iOSStringPath);
@@ -121,6 +139,15 @@ public class IOStoAndroidStringsUtils {
 					stringName = stringName.replace("name=\"", "name=\"_");
 				}
 				
+				List<String>names = namesDic.get(mapKey);
+				
+				if(names.contains(stringName)){
+					// duplicate!
+					stringName = stringName.replace("name=\"", "name=\"DUPLICATE_");
+				}
+				
+				names.add(stringName);
+				
 				matcher.appendReplacement(buf, stringName);
 
 			}
@@ -153,5 +180,7 @@ public class IOStoAndroidStringsUtils {
 		Files.write((Paths.get(path)), content.getBytes(StandardCharsets.UTF_8));
 
 	}
+
+
 	
 }
