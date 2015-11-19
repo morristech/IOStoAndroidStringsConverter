@@ -50,14 +50,14 @@ public class IOStoAndroidStringsUtils {
             	String lang =  dir.substring(dir.lastIndexOf("\\") + 1, dir.length());            	
             	
             	
-            	System.out.println("LANG DIR "  +iOSStringPath + "/" + lang  + "/" +  iOSStringFileName);
+            	//System.out.println("LANG DIR "  +iOSStringPath + "/" + lang  + "/" +  iOSStringFileName);
             	
             	if(!Files.exists(Paths.get(iOSStringPath + "/" + lang  + "/" +  iOSStringFileName))){
             		// not a language dir
             		continue;
             	}
             	
-            	System.out.println("LANG "  +lang);
+            	//System.out.println("LANG "  +lang);
             	
             	String androidLangDir = lang.replace("-", "-r")
             								.replace("Hans", "CN")
@@ -125,28 +125,26 @@ public class IOStoAndroidStringsUtils {
 				String stringName = stringFullName.substring(("name=\"".length()), stringFullName.length());
 				
 				stringName = stringName.replace(" ", "_")
-						.replace(".", "DOT")
-						.replace("!", "EXCLAM")
-						.replace("?", "QUESTION")
-						.replace("\'", "APOST")
-						.replace("/", "SLASH")
-						.replace(",", "COMA")
-						.replace("(", "START_PARENT")
-						.replace(")", "END_PARENT")
-						.replace("{", "START_QBRAQUET")
-						.replace("}", "END_QBRAQUET")
-						.replace("&amp;", "AMPERSAND")
-						.replace("-", "MINUS")
-						.replace("<", "LESST")
-						.replace(">", "MORET")
-						.replace("@", "AT")
-						.replace("=", "EQUAL")
-						.replace("%", "PERC")
+						.replace(".", "_DOT")
+						.replace("!", "_EXCLAM")
+						.replace("?", "_QUESTION")
+						.replace("\'", "_APOST")
+						.replace("/", "_SLASH")
+						.replace(",", "_COMA")
+						.replace("(", "_START_PARENT")
+						.replace(")", "_END_PARENT")
+						.replace("{", "_START_QBRAQUET")
+						.replace("}", "_END_QBRAQUET")
+						.replace("&amp;", "_AMPERSAND")
+						.replace("-", "_MINUS")
+						.replace("<", "_LESST")
+						.replace(">", "_MORET")
+						.replace("@", "_AT")
+						.replace("=", "_EQUAL")
+						.replace("%", "_PERC")
 						.replace("₂", "_2");
 				
-				System.out.println(stringName);
-				
-				// recontstruce name
+				// reconstruct name
 				stringName = "name=\"" + stringName;
 				
 				if(Character.isDigit(stringName.charAt("name=\"".length()))){ // because of the matching,
@@ -156,10 +154,13 @@ public class IOStoAndroidStringsUtils {
 				
 				List<String>names = namesDic.get(mapKey);
 				
+				// transform to low cap
+				stringName = stringName.toLowerCase();
+				
 				if(names.contains(stringName)){
 					// duplicate!
-					stringName = stringName.replace("name=\"", "name=\"DUPLICATE_");
-				}
+					stringName = stringName.replace("name=\"", "name=\"duplicate_");
+				}	
 				
 				names.add(stringName);
 				

@@ -7,6 +7,8 @@ public class Main {
 
 	public static void main(String[] args) {
 		
+		long startTime = System.currentTimeMillis();
+		
 		String androidStringPath ;	
 		
 		// arg[0] android string path
@@ -43,6 +45,7 @@ public class Main {
 		
 		
 		
+		System.out.println("Strings generation time: " + (System.currentTimeMillis() - startTime) + "milisecs");
 		
 		
 	}
