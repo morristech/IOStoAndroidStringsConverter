@@ -9,35 +9,31 @@ public class Main {
 		
 		long startTime = System.currentTimeMillis();
 		
-		String androidStringPath ;	
-		
 		// arg[0] android string path
+		// arg[1] translations path
+		// arg[2] android specific strings file name (android_localizable_strings.xml)
+		// arg[3] ios file name (TripKit.strings)
+		// arg[4] ios file name (Shared.strings)
+		// arg[5] ios file name	(Localizable.strings)	
 		// ...
-		// n = 1, 3, ...
-		// ...
-		// arg[n] ios path containing lang dirs
-		// arg[n+1] ios file name
+		// arg[n] ios file name
 		//
-		// n+1 strings has more priority than n+3 strings (discarded, not overriden) 
+		// i+1 strings has more priority than i+2 strings (discarded, not overriden) 
 		
-		List<List<String>> iosStringsInfo;
-		
-		
-		if(args != null && args.length > 0 && args.length%2 != 0){
-			androidStringPath = args[0] ;
+		if(args != null && args.length > 3 ){
+			String androidStringPath = args[0] ;
+			String translationsPath = args[1] ;
+			String androidSpecificStringsFile = args[2] ;
 			
-			iosStringsInfo = new ArrayList<>((args.length-1)/2);
 			
-			for (int i = 1; i < args.length; i+=2) {
-				List<String> iosDirFile = new ArrayList<String>(2);
-				System.out.println(args[i]);
-				System.out.println(args[i+1]);
-				iosDirFile.add(0, args[i]);
-				iosDirFile.add(1, args[i+1]);
-				iosStringsInfo.add(iosDirFile);
+			List<String> iosStringsList = new ArrayList<>((args.length-3));
+			
+			for (int i = 3; i < args.length; i++) {	
+				iosStringsList.add(args[i]);
 			}
 			
-			IOStoAndroidStringsUtils.getInstance().transformAllStrings(androidStringPath,iosStringsInfo);
+			IOStoAndroidStringsUtils.getInstance().transformAllStrings(androidStringPath,translationsPath,
+					androidSpecificStringsFile, iosStringsList);
 			
 		}else{
 			throw new Error("Wrong parameters...");
@@ -45,7 +41,7 @@ public class Main {
 		
 		
 		
-		System.out.println("Strings generation time: " + (System.currentTimeMillis() - startTime) + "milisecs");
+		System.out.println("Strings done! Time: " + (System.currentTimeMillis() - startTime) + "milisecs");
 		
 		
 	}

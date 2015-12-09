@@ -19,6 +19,8 @@ public class IOStoAndroidStringsUtils {
 	
 	private Dictionary<String, List<String>> namesDic;
 	
+	public static final String DEFAULT_LANG = "en";
+	
 	private IOStoAndroidStringsUtils(){}
 	
 	public static IOStoAndroidStringsUtils getInstance(){
@@ -28,44 +30,42 @@ public class IOStoAndroidStringsUtils {
 		return instance;
 	}
 	
-	public void transformAllStrings(String androidStringPath, List<List<String>> iosStringsInfo) {
+	public void transformAllStrings(String androidStringPath, String translationsPath,
+			String androidSpecificStringsFile,  List<String> iosStringsList) {
 
-		namesDic = new Hashtable<>();		
-		for (int i = 0; i < iosStringsInfo.size(); i++) {
-			transformAllStrings("gereratedStrings" + i + ".xml" ,androidStringPath,
-					iosStringsInfo.get(i).get(0),iosStringsInfo.get(i).get(1));
+	   	namesDic = new Hashtable<>();
+	   	
+		for (int i = 0; i < iosStringsList.size(); i++) {
+			transformAllStrings(iosStringsList.get(i)+ ".xml" ,androidStringPath,
+					translationsPath, iosStringsList.get(i));
 		}
+		
+		transformAllSpecificStrings(androidStringPath,
+				translationsPath,androidSpecificStringsFile);
 		
 		
 	}
 	
 	
-	public void transformAllStrings(String androidFileName, String destAndroidStringPath, String iOSStringPath,
+	public void transformAllStrings(String androidFileName, String destAndroidStringPath, String translationsPath,
 			String iOSStringFileName){		
 		
-		try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(Paths.get(iOSStringPath))) {
-            for (Path path : directoryStream) {
+		try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(Paths.get(translationsPath))) {
+            for (Path path : directoryStream) {   
             	
             	String dir = path.toString();
             	String lang =  dir.substring(dir.lastIndexOf("\\") + 1, dir.length());            	
             	
-            	
-            	//System.out.println("LANG DIR "  +iOSStringPath + "/" + lang  + "/" +  iOSStringFileName);
-            	
-            	if(!Files.exists(Paths.get(iOSStringPath + "/" + lang  + "/" +  iOSStringFileName))){
+            	if(!Files.exists(Paths.get(translationsPath + "/" + lang  + "/" +  iOSStringFileName))){
             		// not a language dir
-            		continue;
+            		continue
+            		;
             	}
-            	
-            	//System.out.println("LANG "  +lang);
-            	
             	String androidLangDir = lang.replace("-", "-r")
             								.replace("Hans", "CN")
-            								.replace("Hant", "TW")
-            								.replace("Base", "")
-            								.replace(".lproj", ""); // iOS like dir
+            								.replace("Hant", "TW"); // iOS like dir
             	
-            	if(androidLangDir.equals("")){ // default res
+            	if(androidLangDir.equals("") || lang.equals(DEFAULT_LANG)){ // default res
             		androidLangDir = "values";
             	}else{
             		androidLangDir = "values-" + androidLangDir;
@@ -75,8 +75,46 @@ public class IOStoAndroidStringsUtils {
             		namesDic.put(androidLangDir, new ArrayList<String>());
             	}
         
-            	transformIOStoAndroidStrings(iOSStringPath + "/" + lang  + "/" +  iOSStringFileName,
-            			destAndroidStringPath + "/" + androidLangDir , androidFileName, androidLangDir);
+            	transformIOStoAndroidStrings(translationsPath + "/" + lang  + "/" +  iOSStringFileName,
+            			destAndroidStringPath + "/" + androidLangDir , androidFileName, androidLangDir);            	
+                     	
+            }
+        } catch (IOException ex) {}
+		
+	}
+	
+	public void transformAllSpecificStrings(String destAndroidStringPath, String translationsPath,
+			String androidSpecificStringsFile){		
+		
+		try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(Paths.get(translationsPath))) {
+            for (Path path : directoryStream) {   
+            	
+            	String dir = path.toString();
+            	String lang =  dir.substring(dir.lastIndexOf("\\") + 1, dir.length());            	
+
+            	
+            	if(!Files.exists(Paths.get(translationsPath + "/" + lang  + "/" +  androidSpecificStringsFile))){
+            		// not a language dir
+            		continue;
+            	}            	
+
+            	
+            	String androidLangDir = lang.replace("-", "-r")
+            								.replace("Hans", "CN")
+            								.replace("Hant", "TW"); // iOS like dir
+            	
+            	if(androidLangDir.equals("")|| lang.equals(DEFAULT_LANG)){ // default res
+            		androidLangDir = "values";
+            	}else{
+            		androidLangDir = "values-" + androidLangDir;
+            	}
+            	
+            	if(namesDic.get(androidLangDir)==null){
+            		namesDic.put(androidLangDir, new ArrayList<String>());
+            	}
+        
+            	reGenerateDefaultAndroidStrings(translationsPath + "/" + lang  + "/" + androidSpecificStringsFile,
+            			destAndroidStringPath + "/" + androidLangDir , androidSpecificStringsFile, androidLangDir);
             	
             }
         } catch (IOException ex) {}
@@ -156,7 +194,7 @@ public class IOStoAndroidStringsUtils {
 				
 				// transform to low cap
 				stringName = stringName.toLowerCase();
-				
+
 				if(names.contains(stringName)){
 					// duplicate!
 					stringName = stringName.replace("name=\"", "name=\"duplicate_");
@@ -177,7 +215,67 @@ public class IOStoAndroidStringsUtils {
 			
 			writeFile(androidStringPath + "/" +  androidFileName,buf.toString());
 			
-			System.out.println("Done!!" );
+		} catch (IOException e) {
+			System.out.println("ERROR "+  e + " ## " + e.getMessage());
+		}
+		
+				
+	}
+	
+	public void reGenerateDefaultAndroidStrings(String androidSpecificStringPath,String androidStringPath,
+			String androidFileName, String mapKey){
+		
+		try {
+			
+			if(!Files.exists(Paths.get(androidSpecificStringPath))){
+				return;
+			}
+			
+			String content = readFile(androidSpecificStringPath);
+			
+			String patternWords = "[^\"\r\n]+";
+			String patternFullStringDef = "(name=\""+ patternWords + "\")";			
+
+			Pattern patternStringNames = Pattern.compile(patternFullStringDef);
+			Matcher matcher = patternStringNames.matcher(content);
+			
+			
+			// Names clean up
+			StringBuffer buf = new StringBuffer();
+			while(matcher.find()){
+				String stringName = matcher.group(1);				
+				
+				
+				List<String>names = namesDic.get(mapKey);
+				
+			
+				// transform to low cap (should already be)
+				stringName = stringName.toLowerCase();	
+				
+				
+				if(names.contains(stringName)){
+					// duplicate! Name as default
+					stringName = stringName.replace("name=\"", "name=\"default_");
+				}	
+				
+				names.add(stringName);
+				
+				if (stringName.contains("sort") || stringName.contains("about")) {
+					System.out.println("AND added key " + stringName);
+				}
+				
+				matcher.appendReplacement(buf, stringName);
+
+			}
+			matcher.appendTail(buf);
+			
+			
+			if(!Files.exists(Paths.get(androidStringPath))){
+				Files.createDirectory(Paths.get(androidStringPath));
+			}			
+			
+			writeFile(androidStringPath + "/" +  androidFileName,buf.toString());
+
 			
 		} catch (IOException e) {
 			System.out.println("ERROR "+  e + " ## " + e.getMessage());
