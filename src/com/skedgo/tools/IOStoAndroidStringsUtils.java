@@ -86,18 +86,14 @@ public class IOStoAndroidStringsUtils {
 	public void transformAllSpecificStrings(String destAndroidStringPath, String translationsPath,
 			String androidSpecificStringsFile) {
 
-		try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(Paths.get(translationsPath))) {
+		try (DirectoryStream<Path> directoryStream = Files
+				.newDirectoryStream(FileSystems.getDefault().getPath(translationsPath), new DirectoriesFilter())) {
 			for (Path path : directoryStream) {
 
-				String dir = path.toString();
-				String lang = dir.substring(dir.lastIndexOf("\\") + 1, dir.length());
-
-				if (!Files.exists(Paths.get(translationsPath + "/" + lang + "/" + androidSpecificStringsFile))) {
-					// not a language dir
-					continue;
-				}
-
+				String lang = path.getFileName().toString();
+				
 				String androidLangDir = lang.replace("-", "-r").replace("Hans", "CN").replace("Hant", "TW"); // iOS
+				
 																												// like
 																												// dir
 
@@ -203,7 +199,7 @@ public class IOStoAndroidStringsUtils {
 			writeFile(androidStringPath + "/" + androidFileName, buf.toString());
 
 		} catch (IOException e) {
-			System.out.println("ERROR " + e + " ## " + e.getMessage());
+			System.out.println("ERROR " + e.getMessage());
 		}
 
 	}
@@ -258,7 +254,7 @@ public class IOStoAndroidStringsUtils {
 			writeFile(androidStringPath + "/" + androidFileName, buf.toString());
 
 		} catch (IOException e) {
-			System.out.println("ERROR " + e + " ## " + e.getMessage());
+			System.out.println("ERROR " + e.getMessage());
 		}
 
 	}
