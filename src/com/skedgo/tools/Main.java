@@ -32,7 +32,7 @@ public class Main {
 				iosStringsList.add(args[i]);
 			}
 			
-			IOStoAndroidStringsUtils.getInstance().transformAllStrings(androidStringPath,translationsPath,
+			StringsGeneratorUtils.getInstance().transformAllStrings(androidStringPath,translationsPath,
 					androidSpecificStringsFile, iosStringsList);
 			
 		}else{
