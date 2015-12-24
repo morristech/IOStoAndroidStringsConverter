@@ -148,7 +148,13 @@ public class IOStoAndroidUtils {
 	}
 	
 	protected String cleanValue(String value){
-		return createAndroidPatterns(basicClean(value).replace("'", "\\'"));		
+		String cleanedValue = createAndroidPatterns(basicClean(value).replace("'", "\\'"));		
+		
+		if(cleanedValue.startsWith(" ") || cleanedValue.endsWith(" ")){
+			cleanedValue = "\"" + cleanedValue + "\"";
+		}
+		
+		return cleanedValue;
 		
 	}
 	
