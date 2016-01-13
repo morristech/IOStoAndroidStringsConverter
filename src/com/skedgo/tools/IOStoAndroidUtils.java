@@ -12,129 +12,128 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class IOStoAndroidUtils {
-	
+
 	private Dictionary<String, List<String>> namesDic;
-	
+
 	private static IOStoAndroidUtils instance;
-	
+
 	private String patternWords = "[^\"\r\n]+";
 	private String patternStringIOS = "\"(" + patternWords + ")\" = \"(" + patternWords + ")\";";
 	private String patternComments = "/\\*(.*?)\\*/";
-	private String patternIOSCommplete = "[" + patternStringIOS +"|"+ patternComments + "]+";
-	
-	private IOStoAndroidUtils(){}
-	
+	private String patternIOSCommplete = "[" + patternStringIOS + "|" + patternComments + "]+";
+
+	private IOStoAndroidUtils() {
+	}
+
 	public static IOStoAndroidUtils getInstance() {
-		if(instance==null){
+		if (instance == null) {
 			instance = new IOStoAndroidUtils();
 			instance.namesDic = new Hashtable<>();
 		}
 		return instance;
 	}
-	
+
 	public void transformIOStoAndroidStrings(String iOSStringPath, String androidStringPath, String androidFileName,
 			String mapKey) {
-		
+
 		if (namesDic.get(mapKey) == null) {
 			namesDic.put(mapKey, new ArrayList<String>());
 		}
 
 		try {
-			
+
 			String content = readFile(iOSStringPath);
-			
-			
+
 			Pattern patternStringNames = Pattern.compile(patternIOSCommplete);
 			Matcher matcher = patternStringNames.matcher(content);
-			
+
 			String match = null;
 			String stringDef = null;
-			
+
 			StringBuffer buf = new StringBuffer("<?xml version='1.0' encoding='UTF-8'?>\n<resources>\n");
-			
+
 			while (matcher.find()) {
-				
-				match =  matcher.group();
-				
+
+				match = matcher.group();
+
 				buf.append("\n");
-				
-				if(match.startsWith("\"")){
+
+				if (match.startsWith("\"")) {
 					stringDef = processStringDef(match, mapKey);
-					if (stringDef!=null)buf.append(stringDef);					
-				}else{
+					if (stringDef != null)
+						buf.append(stringDef);
+				} else {
 					buf.append(processComment(match));
-				}				
-				
+				}
+
 			}
-			
-			buf.append("\n</resources>");
-			
+
+			buf.append("\n</resources>\n").append(
+					"<!-- This is an auto generated file. Check https://github.com/skedgo/tripgo-android#generate-localized-strings -->");
+
 			if (!Files.exists(Paths.get(androidStringPath))) {
 				Files.createDirectory(Paths.get(androidStringPath));
 			}
 
-			writeFile(androidStringPath + "/" + androidFileName,  buf.toString());
-
-				
+			writeFile(androidStringPath + "/" + androidFileName, buf.toString());
 
 		} catch (IOException e) {
 			System.out.println("ERROR " + e.getMessage());
 		}
-		
-		
+
 	}
-	
-	protected String processComment(String string){
-		
+
+	protected String processComment(String string) {
+
 		return string.replace("/*", "\t<!--").replace("*/", "-->");
-		
+
 	}
-	
-	protected String processStringDef(String string, String mapKey){
-		
+
+	protected String processStringDef(String string, String mapKey) {
+
 		Pattern patternStringNames = Pattern.compile(patternStringIOS);
 		Matcher matcher = patternStringNames.matcher(string);
-		
+
 		String name = null;
-		
-		if(matcher.find()){	
-			
+
+		if (matcher.find()) {
+
 			name = cleanName(matcher.group(1), mapKey);
-			
-			if(name == null){
+
+			if (name == null) {
 				return null;
-			}else {
-				return "\t<string name=\""+ name +"\">"+ cleanValue(matcher.group(2)) +"</string>";
+			} else {
+				return "\t<string name=\"" + name + "\">" + cleanValue(matcher.group(2)) + "</string>";
 			}
-		};
-		
-		return "\t<string name=\"string_error\"> string error!!! " + string +" </string>";
-		
+		}
+		;
+
+		return "\t<string name=\"string_error\"> string error!!! " + string + " </string>";
+
 	}
-	
-	protected String basicClean(String string){
+
+	protected String basicClean(String string) {
 		return string.replaceAll("&", "&amp;").replaceAll("%1\\$@", "PERCAT").replaceAll("%2\\$@", "PERCAT")
-				.replaceAll("%@", "PERCAT").replaceAll("%ld", "PERCAT")
-				;
+				.replaceAll("%@", "PERCAT").replaceAll("%ld", "PERCAT");
 	}
-	
-	protected String cleanName(String name, String mapKey){
-		
+
+	protected String cleanName(String name, String mapKey) {
+
 		name = basicClean(name);
-		
+
 		name = name.replace(" ", "_").replace(".", "_DOT").replace("!", "_EXCLAM").replace("%s", "nps")
 				.replace("?", "_QUESTION").replace("\'", "_APOST").replace("/", "_SLASH").replace(",", "_COMA")
 				.replace("(", "_START_PARENT").replace(")", "_END_PARENT").replace("{", "_START_QBRAQUET")
 				.replace("}", "_END_QBRAQUET").replace("&amp;", "_AMPERSAND").replace("-", "_MINUS")
 				.replace("<", "_LESST").replace(">", "_MORET").replace("@", "_AT").replace("=", "_EQUAL")
 				.replace("%", "_PERC").replace("₂", "_2").replace("PERCAT", "_pattern");
-		
-		if (Character.isDigit(name.charAt(0))) { 
+
+		if (Character.isDigit(name.charAt(0))) {
 			name = "_" + name;
 		}
-		
+
 		name = name.toLowerCase();
-		
+
 		List<String> names = namesDic.get(mapKey);
 		if (names.contains(name)) {
 			// duplicate!
@@ -142,36 +141,35 @@ public class IOStoAndroidUtils {
 		}
 
 		names.add(name);
-		
+
 		return name;
-		
+
 	}
-	
-	protected String cleanValue(String value){
-		String cleanedValue = createAndroidPatterns(basicClean(value).replace("'", "\\'"));		
-		
-		if(cleanedValue.startsWith(" ") || cleanedValue.endsWith(" ")){
+
+	protected String cleanValue(String value) {
+		String cleanedValue = createAndroidPatterns(basicClean(value).replace("'", "\\'"));
+
+		if (cleanedValue.startsWith(" ") || cleanedValue.endsWith(" ")) {
 			cleanedValue = "\"" + cleanedValue + "\"";
 		}
-		
+
 		return cleanedValue;
-		
+
 	}
-	
-	protected String createAndroidPatterns(String string){
+
+	protected String createAndroidPatterns(String string) {
 		int i = 1;
-		while(string.contains("PERCAT")){
-			string = string.replaceFirst("PERCAT", "%"+ i++ +"\\$s");
+		while (string.contains("PERCAT")) {
+			string = string.replaceFirst("PERCAT", "%" + i++ + "\\$s");
 		}
 		return string;
 	}
-	
 
 	// TODO: remove this method
 	public void reGenerateDefaultAndroidStrings(String androidSpecificStringPath, String androidStringPath,
 			String androidFileName, String mapKey) {
-		
-		 try {
+
+		try {
 
 			if (!Files.exists(Paths.get(androidSpecificStringPath))) {
 				return;
@@ -187,9 +185,9 @@ public class IOStoAndroidUtils {
 
 			// Names clean up
 			StringBuffer buf = new StringBuffer();
-			
+
 			String keyName = null;
-			
+
 			while (matcher.find()) {
 				String stringName = matcher.group(1);
 
@@ -197,7 +195,7 @@ public class IOStoAndroidUtils {
 
 				// transform to low cap (should already be)
 				stringName = stringName.toLowerCase();
-				
+
 				keyName = stringName.replace("name=\"", "").replace("\"", "");
 
 				if (names.contains(keyName)) {
@@ -205,12 +203,13 @@ public class IOStoAndroidUtils {
 					stringName = stringName.replace("name=\"", "name=\"default_");
 				}
 
-				names.add(keyName);				
+				names.add(keyName);
 
 				matcher.appendReplacement(buf, stringName);
 
 			}
-			matcher.appendTail(buf);
+			matcher.appendTail(buf).append(
+					"<!-- This is an auto generated file. Check https://github.com/skedgo/tripgo-android#generate-localized-strings -->");
 
 			if (!Files.exists(Paths.get(androidStringPath))) {
 				Files.createDirectory(Paths.get(androidStringPath));
@@ -223,9 +222,7 @@ public class IOStoAndroidUtils {
 		}
 
 	}
-	
-	
-	
+
 	private String readFile(String path) throws IOException {
 		byte[] encoded = Files.readAllBytes(Paths.get(path));
 		return new String(encoded, StandardCharsets.UTF_8);
@@ -236,6 +233,5 @@ public class IOStoAndroidUtils {
 		Files.write((Paths.get(path)), content.getBytes(StandardCharsets.UTF_8));
 
 	}
-
 
 }
