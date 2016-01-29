@@ -1,4 +1,4 @@
-package com.skedgo.tools;
+package com.skedgo.tripgo.tools;
 
 import java.util.ArrayList;
 import java.util.Arrays;
