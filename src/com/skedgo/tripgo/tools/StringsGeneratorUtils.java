@@ -11,6 +11,7 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -110,7 +111,7 @@ public class StringsGeneratorUtils {
 
 				String output = outputStrategy.generateOutput(structure);
 
-				writeFile(destAndroidStringPath + "/" + androidLangDir + "/" + androidFileName, output);
+				writeFile(destAndroidStringPath + "/" + androidLangDir + "/" , androidFileName, output);
 
 			}
 		} catch (Exception e) {
@@ -155,7 +156,7 @@ public class StringsGeneratorUtils {
 				
 				String output = outputStrategy.generateOutput(structure);
 				
-				writeFile(destAndroidStringPath + "/" + androidLangDir + "/" + androidSpecificStringsFile, output);
+				writeFile(destAndroidStringPath + "/" + androidLangDir + "/" , androidSpecificStringsFile, output);
 				
 			}
 		} catch (Exception ex) {
@@ -179,8 +180,14 @@ public class StringsGeneratorUtils {
 		return new FileInputStream(file);		
 	}
 
-	private void writeFile(String path, String content) throws IOException {
-		Files.write((Paths.get(path)), content.getBytes(StandardCharsets.UTF_8));
+	private void writeFile(String dirPath, String fileName, String content) throws IOException {
+		
+		Path parentDir = Paths.get(dirPath);
+		
+		if (!Files.exists(parentDir))
+		    Files.createDirectories(parentDir);
+		
+		Files.write((Paths.get(dirPath + fileName)), content.getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE);
 	}
 
 	public static class DirectoriesFilter implements Filter<Path> {
