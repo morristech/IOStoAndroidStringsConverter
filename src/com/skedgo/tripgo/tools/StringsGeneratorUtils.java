@@ -89,8 +89,8 @@ public class StringsGeneratorUtils {
 
 				InputStream input = readFile(translationsPath + "/" + lang + "/" + iOSStringFileName);
 
-				IOSInputStrategy inputStrategy = new IOSInputStrategy();
-				AndroidOutputStrategy outputStrategy = new AndroidOutputStrategy();
+				IOSInputStrategy inputStrategy = IOSInputStrategy.getInstance();
+				AndroidOutputStrategy outputStrategy = AndroidOutputStrategy.getInstance();
 
 				StringsStructure structure = inputStrategy.getInputValues(input);
 				structure = outputStrategy.preprocessInputNames(structure);
@@ -149,8 +149,8 @@ public class StringsGeneratorUtils {
 				
 				InputStream input = readFile(translationsPath + "/" + lang + "/" + androidSpecificStringsFile);
 				
-				AndroidInputStrategy inputStrategy = new AndroidInputStrategy();
-				AndroidOutputStrategy outputStrategy = new AndroidOutputStrategy();
+				AndroidInputStrategy inputStrategy = AndroidInputStrategy.getInstance();
+				AndroidOutputStrategy outputStrategy = AndroidOutputStrategy.getInstance();
 
 				StringsStructure structure = inputStrategy.getInputValues(input);
 				structure = outputStrategy.preprocessInputNames(structure);
