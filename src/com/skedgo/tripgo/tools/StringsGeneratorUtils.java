@@ -24,7 +24,6 @@ import com.skedgo.tools.platform.android.AndroidInputStrategy;
 import com.skedgo.tools.platform.android.AndroidOutputStrategy;
 import com.skedgo.tools.platform.ios.IOSInputStrategy;
 
-
 public class StringsGeneratorUtils {
 
 	private static StringsGeneratorUtils instance;
@@ -51,7 +50,6 @@ public class StringsGeneratorUtils {
 					iosStringsList.get(i), langs);
 		}
 
-		// TODO
 		transformAllSpecificStrings(androidStringPath, translationsPath, androidSpecificStringsFile, langs);
 
 	}
@@ -70,16 +68,7 @@ public class StringsGeneratorUtils {
 					continue;
 				}
 
-				String androidLangDir = lang.replace("-", "-r").replace("Hans", "CN").replace("Hant", "TW"); // iOS
-																												// like
-																												// dir
-
-				if (androidLangDir.equals("") || lang.equals(DEFAULT_LANG)) { // default
-																				// res
-					androidLangDir = "values";
-				} else {
-					androidLangDir = "values-" + androidLangDir;
-				}
+				String androidLangDir = getAndroidLangDir(lang);
 
 				if (namesMap.get(lang) == null) {
 					namesMap.put(lang, new ArrayList<String>());
@@ -112,7 +101,7 @@ public class StringsGeneratorUtils {
 
 				String output = outputStrategy.generateOutput(structure);
 
-				writeFile(destAndroidStringPath + "/" + androidLangDir + "/" , androidFileName, output);
+				writeFile(destAndroidStringPath + "/" + androidLangDir + "/", androidFileName, output);
 
 			}
 		} catch (Exception e) {
@@ -134,36 +123,43 @@ public class StringsGeneratorUtils {
 					continue;
 				}
 
-				String androidLangDir = lang.replace("-", "-r").replace("Hans", "CN").replace("Hant", "TW"); // iOS
+				String androidLangDir = getAndroidLangDir(lang);
 
-				if (androidLangDir.equals("") || lang.equals(StringsGeneratorUtils.DEFAULT_LANG)) { // default
-					// res
-					androidLangDir = "values";
-				} else {
-					androidLangDir = "values-" + androidLangDir;
-				}
-				
 				if (!Files.exists(Paths.get(translationsPath + "/" + lang + "/" + androidSpecificStringsFile))) {
 					continue;
 				}
-				
+
 				InputStream input = readFile(translationsPath + "/" + lang + "/" + androidSpecificStringsFile);
-				
+
 				AndroidInputStrategy inputStrategy = AndroidInputStrategy.getInstance();
 				AndroidOutputStrategy outputStrategy = AndroidOutputStrategy.getInstance();
 
 				StringsStructure structure = inputStrategy.getInputValues(input);
 				structure = outputStrategy.preprocessInputNames(structure);
-				
+
 				String output = outputStrategy.generateOutput(structure);
-				
-				writeFile(destAndroidStringPath + "/" + androidLangDir + "/" , androidSpecificStringsFile, output);
-				
+
+				writeFile(destAndroidStringPath + "/" + androidLangDir + "/", androidSpecificStringsFile, output);
+
 			}
 		} catch (Exception ex) {
 			System.out.println("ERROR " + ex);
 		}
 
+	}
+
+	private String getAndroidLangDir(String lang) {
+
+		// iOS like dir
+		String androidLangDir = lang.replace("-", "-r").replace("Hans", "CN").replace("Hant", "TW");
+
+		if (androidLangDir.equals("") || lang.equals(DEFAULT_LANG)) { // default
+			// res
+			androidLangDir = "values";
+		} else {
+			androidLangDir = "values-" + androidLangDir;
+		}
+		return androidLangDir;
 	}
 
 	private boolean skipLang(String langToCheck, List<String> langs) {
@@ -178,21 +174,21 @@ public class StringsGeneratorUtils {
 
 	private InputStream readFile(String path) throws IOException {
 		File file = new File(path);
-		return new FileInputStream(file);		
+		return new FileInputStream(file);
 	}
 
 	private void writeFile(String dirPath, String fileName, String content) throws IOException {
-		
+
 		Path parentDir = Paths.get(dirPath);
 		Path filePath = Paths.get(dirPath + fileName);
-		
+
 		if (!Files.exists(parentDir))
-		    Files.createDirectories(parentDir);
-		
-		if(Files.exists(filePath)){
+			Files.createDirectories(parentDir);
+
+		if (Files.exists(filePath)) {
 			new PrintWriter(dirPath + fileName).close();
 		}
-		
+
 		Files.write(filePath, content.getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE);
 	}
 
