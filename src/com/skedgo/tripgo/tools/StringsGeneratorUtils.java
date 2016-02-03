@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
 import java.nio.file.DirectoryStream.Filter;
@@ -183,11 +184,16 @@ public class StringsGeneratorUtils {
 	private void writeFile(String dirPath, String fileName, String content) throws IOException {
 		
 		Path parentDir = Paths.get(dirPath);
+		Path filePath = Paths.get(dirPath + fileName);
 		
 		if (!Files.exists(parentDir))
 		    Files.createDirectories(parentDir);
 		
-		Files.write((Paths.get(dirPath + fileName)), content.getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE);
+		if(Files.exists(filePath)){
+			new PrintWriter(dirPath + fileName).close();
+		}
+		
+		Files.write(filePath, content.getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE);
 	}
 
 	public static class DirectoriesFilter implements Filter<Path> {
