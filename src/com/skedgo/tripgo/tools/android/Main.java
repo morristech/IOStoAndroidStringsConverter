@@ -1,4 +1,4 @@
-package com.skedgo.tripgo.tools;
+package com.skedgo.tripgo.tools.android;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -13,7 +13,7 @@ public class Main {
 		// arg[0] android string path
 		// arg[1] translations path
 		// arg[2] android specific strings file name (android_localizable_strings.xml)
-		// arg[3] ios file name (TripKit.strings)
+		// arg[3] Languages to generate separated by "#" (for example, en#es#de#fi#zh-Hant#zh-Hans)
 		// arg[4] ios file name (TripKit.strings)
 		// arg[5] ios file name (Shared.strings)
 		// arg[6] ios file name	(Localizable.strings)	

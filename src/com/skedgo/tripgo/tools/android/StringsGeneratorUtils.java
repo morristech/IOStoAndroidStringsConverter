@@ -1,4 +1,4 @@
-package com.skedgo.tripgo.tools;
+package com.skedgo.tripgo.tools.android;
 
 import java.io.File;
 import java.io.FileInputStream;
