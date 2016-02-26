@@ -18,6 +18,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.skedgo.tools.InputCreatorListener;
 import com.skedgo.tools.model.StringDefinition;
 import com.skedgo.tools.model.StringsStructure;
 import com.skedgo.tools.platform.android.AndroidInputStrategy;
@@ -54,7 +55,7 @@ public class StringsGeneratorUtils {
 
 	}
 
-	public void transformAllStrings(String androidFileName, String destAndroidStringPath, String translationsPath,
+	public void transformAllStrings(final String androidFileName, final String destAndroidStringPath, String translationsPath,
 			String iOSStringFileName, List<String> langs) {
 
 		try (DirectoryStream<Path> directoryStream = Files
@@ -68,41 +69,52 @@ public class StringsGeneratorUtils {
 					continue;
 				}
 
-				String androidLangDir = getAndroidLangDir(lang);
+				final String androidLangDir = getAndroidLangDir(lang);
 
 				if (namesMap.get(lang) == null) {
 					namesMap.put(lang, new ArrayList<String>());
 				}
 
-				List<String> stringNames = namesMap.get(lang);
+				final List<String> stringNames = namesMap.get(lang);
 
 				InputStream input = readFile(translationsPath + "/" + lang + "/" + iOSStringFileName);
 
 				IOSInputStrategy inputStrategy = IOSInputStrategy.getInstance();
-				AndroidOutputStrategy outputStrategy = AndroidOutputStrategy.getInstance();
+				final AndroidOutputStrategy outputStrategy = AndroidOutputStrategy.getInstance();
 
-				StringsStructure structure = inputStrategy.getInputValues(input);
-				structure = outputStrategy.preprocessInputNames(structure);
+				inputStrategy.createInputValues(input, new InputCreatorListener() {
+					
+					@Override
+					public void didFinishInputCreation(StringsStructure structure) {
+						structure = outputStrategy.preprocessInputNames(structure);
 
-				// remove duplicates
-				Map<Integer, StringDefinition> definitionsCopy = new HashMap<>(structure.getDefinitions());
+						// remove duplicates
+						Map<Integer, StringDefinition> definitionsCopy = new HashMap<>(structure.getDefinitions());
 
-				for (int i = 0; i < structure.getDefinitions().size(); i++) {
-					StringDefinition definition = structure.getDefinitions().get(i);
+						for (int i = 0; i < structure.getDefinitions().size(); i++) {
+							StringDefinition definition = structure.getDefinitions().get(i);
 
-					if (stringNames.contains(definition.getName())) {
-						definitionsCopy.remove(i);
-					} else {
-						stringNames.add(definition.getName());
+							if (stringNames.contains(definition.getName())) {
+								definitionsCopy.remove(i);
+							} else {
+								stringNames.add(definition.getName());
+							}
+						}
+
+						structure.setDefinitions(definitionsCopy);
+
+						String output = outputStrategy.generateOutput(structure);
+
+						try {
+							writeFile(destAndroidStringPath + "/" + androidLangDir + "/", androidFileName, output);
+						} catch (IOException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+
 					}
-				}
-
-				structure.setDefinitions(definitionsCopy);
-
-				String output = outputStrategy.generateOutput(structure);
-
-				writeFile(destAndroidStringPath + "/" + androidLangDir + "/", androidFileName, output);
-
+				});
+				
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -110,8 +122,8 @@ public class StringsGeneratorUtils {
 
 	}
 
-	public void transformAllSpecificStrings(String destAndroidStringPath, String translationsPath,
-			String androidSpecificStringsFile, List<String> langs) {
+	public void transformAllSpecificStrings(final String destAndroidStringPath, String translationsPath,
+			final String androidSpecificStringsFile, List<String> langs) {
 
 		try (DirectoryStream<Path> directoryStream = Files
 				.newDirectoryStream(FileSystems.getDefault().getPath(translationsPath), new DirectoriesFilter())) {
@@ -123,7 +135,7 @@ public class StringsGeneratorUtils {
 					continue;
 				}
 
-				String androidLangDir = getAndroidLangDir(lang);
+				final String androidLangDir = getAndroidLangDir(lang);
 
 				if (!Files.exists(Paths.get(translationsPath + "/" + lang + "/" + androidSpecificStringsFile))) {
 					continue;
@@ -132,15 +144,26 @@ public class StringsGeneratorUtils {
 				InputStream input = readFile(translationsPath + "/" + lang + "/" + androidSpecificStringsFile);
 
 				AndroidInputStrategy inputStrategy = AndroidInputStrategy.getInstance();
-				AndroidOutputStrategy outputStrategy = AndroidOutputStrategy.getInstance();
+				final AndroidOutputStrategy outputStrategy = AndroidOutputStrategy.getInstance();
 
-				StringsStructure structure = inputStrategy.getInputValues(input);
-				structure = outputStrategy.preprocessInputNames(structure);
+				inputStrategy.createInputValues(input, new InputCreatorListener() {
+					
+					@Override
+					public void didFinishInputCreation(StringsStructure structure) {
+						structure = outputStrategy.preprocessInputNames(structure);
 
-				String output = outputStrategy.generateOutput(structure);
+						String output = outputStrategy.generateOutput(structure);
 
-				writeFile(destAndroidStringPath + "/" + androidLangDir + "/", androidSpecificStringsFile, output);
+						try {
+							writeFile(destAndroidStringPath + "/" + androidLangDir + "/", androidSpecificStringsFile, output);
+						} catch (IOException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();						}
 
+						
+					}
+				});
+				
 			}
 		} catch (Exception ex) {
 			System.out.println("ERROR " + ex);
