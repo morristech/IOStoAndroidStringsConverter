@@ -188,7 +188,7 @@ public class StringsGeneratorUtils {
 	private boolean skipLang(String langToCheck, List<String> langs) {
 
 		for (String lang : langs) {
-			if (langToCheck.contains(lang)) {
+			if (langToCheck.equals(lang)) {
 				return false;
 			}
 		}
